@@ -2,10 +2,12 @@
 Thin wrapper around VCON MCP Server. Uses FastMCP Client (STDIO or HTTP).
 All functions are async and expect to be used with a client from get_vcon_client().
 """
+
 # pyright: reportMissingImports=false
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Any, Optional
+
 from fastmcp import Client
 from fastmcp.client.transports.stdio import StdioTransport
 
@@ -38,24 +40,31 @@ async def get_vcon_client():
         async with Client(transport) as client:
             yield client
 
+
 async def _call(client: Client, tool: str, arguments: dict) -> dict:
     """Call VCON MCP tool; return result or raise with error message."""
-    from fastmcp.exceptions import ToolError  # pyright: ignore[reportMissingImports]
     import json  # Added json import
+
+    from fastmcp.exceptions import ToolError  # pyright: ignore[reportMissingImports]
+
     try:
         result = await client.call_tool(tool, arguments, raise_on_error=True)
-        
+
         # If the server returned clean data, use it
         if result.data is not None:
             return result.data
-            
+
         # If the server returned a JSON string inside a TextContent block, parse it!
-        if result.content and isinstance(result.content, list) and hasattr(result.content[0], "text"):
+        if (
+            result.content
+            and isinstance(result.content, list)
+            and hasattr(result.content[0], "text")
+        ):
             try:
                 return json.loads(result.content[0].text)
             except json.JSONDecodeError:
                 pass
-                
+
         return {"content": result.content}
     except ToolError as e:
         return {"success": False, "error": str(e)}
@@ -74,7 +83,13 @@ async def create_lead_vcon(
     Create a new vCon for a OnePrice lead. Uses create_vcon_from_template,
     adds one text dialog, then tags (customer_name, source, funnel_stage, vehicle_interest).
     """
-    template = "phone_call" if source == "phone_call" else "chat_conversation" if source == "web_lead" else "custom"
+    template = (
+        "phone_call"
+        if source == "phone_call"
+        else "chat_conversation"
+        if source == "web_lead"
+        else "custom"
+    )
     subject = _oneprice_subject(customer_name, source)
     parties = _vcon_parties(customer_name)
 
@@ -124,7 +139,9 @@ async def add_followup_vcon(client: Client, customer_name: str, notes: str) -> d
     Create a new vCon for a follow-up (Option A: one vCon per event). Tagged
     source=followup_call and customer_name.
     """
-    subject = f"OnePrice Follow-up – {customer_name} – {datetime.now(timezone.utc).strftime('%Y-%m-%d')}"
+    subject = (
+        f"OnePrice Follow-up – {customer_name} – {datetime.now(timezone.utc).strftime('%Y-%m-%d')}"
+    )
     parties = _vcon_parties(customer_name)
 
     out = await _call(
@@ -155,7 +172,9 @@ async def add_followup_vcon(client: Client, customer_name: str, notes: str) -> d
             },
         },
     )
-    await _call(client, "add_tag", {"vcon_uuid": uuid, "key": "customer_name", "value": customer_name})
+    await _call(
+        client, "add_tag", {"vcon_uuid": uuid, "key": "customer_name", "value": customer_name}
+    )
     await _call(client, "add_tag", {"vcon_uuid": uuid, "key": "source", "value": "followup_call"})
 
     return {"success": True, "vcon_uuid": uuid, "customer_name": customer_name}

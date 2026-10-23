@@ -1,7 +1,8 @@
 """
-OnePrice Sales Memory – FastMCP server exposing 6 tools that sit on top of VCON MCP.
+OnePrice Sales Memory – FastMCP server exposing 7 tools that sit on top of VCON MCP.
 Entrypoint: run this module to start the MCP server (STDIO).
 """
+
 # pyright: reportMissingImports=false
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -33,7 +34,8 @@ async def create_oneprice_lead_vcon(
 ) -> dict:
     """
     Create a new vCon for a OnePrice lead (web, showroom, or phone).
-    Uses VCON MCP create_vcon_from_template, adds one dialog, and tags (customer_name, source, funnel_stage, vehicle_interest).
+    Uses VCON MCP create_vcon_from_template, adds one dialog, and tags
+    (customer_name, source, funnel_stage, vehicle_interest).
     """
     if source not in ("web_lead", "phone_call", "showroom"):
         return {"success": False, "error": "source must be one of: web_lead, phone_call, showroom"}
@@ -47,7 +49,8 @@ async def create_oneprice_lead_vcon(
 @mcp.tool()
 async def add_followup_vcon(customer_name: str, notes: str) -> dict:
     """
-    Record a follow-up (call or note) for an existing customer. Creates a new vCon tagged source=followup_call and customer_name.
+    Record a follow-up (call or note) for an existing customer.
+    Creates a new vCon tagged source=followup_call and customer_name.
     """
     async with get_vcon_client() as client:
         out = await vcon_add_followup(client, customer_name, notes)
@@ -59,10 +62,13 @@ async def add_followup_vcon(customer_name: str, notes: str) -> dict:
 @mcp.tool()
 async def analyze_and_tag_vcon(vcon_id: str) -> dict:
     """
-    Run LLM classification on a vCon and attach analysis + tags (funnel_stage, urgency, vehicle_interest, etc.) via VCON MCP.
+    Run LLM classification on a vCon and attach analysis + tags
+    (funnel_stage, urgency, vehicle_interest, etc.) via VCON MCP.
     """
     async with get_vcon_client() as client:
-        get_out = await get_vcon(client, vcon_id, include_components=["parties", "dialog", "analysis", "attachments"])
+        get_out = await get_vcon(
+            client, vcon_id, include_components=["parties", "dialog", "analysis", "attachments"]
+        )
     if get_out.get("success") is False or get_out.get("error"):
         return {"success": False, "error": get_out.get("error", "Failed to fetch vCon")}
     vcon = get_out.get("vcon") or get_out
@@ -117,21 +123,27 @@ def _lead_summaries_from_vcons(vcons_list: list) -> list[dict]:
         if not isinstance(vcon, dict):
             continue
         tags = _tags_from_vcon(vcon)
-        out.append({
-            "customer_name": tags.get("customer_name") or (vcon.get("parties") or [{}])[0].get("name") or "—",
-            "vcon_uuid": vcon.get("uuid", ""),
-            "subject": vcon.get("subject"),
-            "vehicle_interest": tags.get("vehicle_interest"),
-            "source": tags.get("source"),
-            "created_at": vcon.get("created_at"),
-        })
+        out.append(
+            {
+                "customer_name": tags.get("customer_name")
+                or (vcon.get("parties") or [{}])[0].get("name")
+                or "—",
+                "vcon_uuid": vcon.get("uuid", ""),
+                "subject": vcon.get("subject"),
+                "vehicle_interest": tags.get("vehicle_interest"),
+                "source": tags.get("source"),
+                "created_at": vcon.get("created_at"),
+            }
+        )
     return out
 
 
 @mcp.tool()
 async def get_hot_leads(days: int = 2) -> dict:
     """
-    Return recent hot leads that have not received follow-up. Uses VCON search by date then filters by urgency and excludes customers who already have a follow-up vCon.
+    Return recent hot leads that have not received follow-up.
+    Searches vCons by date, then filters by urgency and excludes customers
+    who already have a follow-up vCon.
     """
     end = datetime.now(timezone.utc)
     start = end - timedelta(days=days)
@@ -144,7 +156,8 @@ async def get_hot_leads(days: int = 2) -> dict:
         return {"success": False, "error": search_out.get("error", "Search failed"), "leads": []}
 
     vcons = search_out.get("vcons") or []
-    # Filter: has urgency=hot_lead (or funnel_stage=new_lead for demo), and no follow-up for this customer
+    # Filter: urgency=hot_lead (or funnel_stage=new_lead for demo),
+    # and no follow-up for this customer
     by_customer: dict[str, list] = {}
     for v in vcons:
         tags = _tags_from_vcon(v)
@@ -176,7 +189,10 @@ async def get_hot_leads(days: int = 2) -> dict:
 @mcp.tool()
 async def get_missed_leads(days: int = 2) -> dict:
     """
-    New leads with no follow-up vCon in the given period. Search vCons by date, filter to funnel_stage=new_lead (or source in web_lead/phone_call/showroom), exclude customers with any source=followup_call.
+    New leads with no follow-up vCon in the given period. Searches vCons
+    by date, filters to funnel_stage=new_lead (or source in
+    web_lead/phone_call/showroom), and excludes customers with any
+    source=followup_call.
     """
     end = datetime.now(timezone.utc)
     start = end - timedelta(days=days)
@@ -222,17 +238,27 @@ async def get_missed_leads(days: int = 2) -> dict:
 @mcp.tool()
 async def generate_followup(customer_name: str) -> dict:
     """
-    Generate a OnePrice-style (no-haggle, one-price, friendly) follow-up message. Finds all vCons for this customer, builds context, and uses OpenAI to produce a short script.
+    Generate a OnePrice-style (no-haggle, one-price, friendly) follow-up.
+    Finds all vCons for this customer, builds context, and uses OpenAI to
+    produce a short script.
     """
     async with get_vcon_client() as client:
         tag_out = await search_by_tags(client, {"customer_name": customer_name}, limit=20)
     if tag_out.get("success") is False or tag_out.get("error"):
-        return {"success": False, "error": tag_out.get("error", "Search failed"), "customer_name": customer_name}
+        return {
+            "success": False,
+            "error": tag_out.get("error", "Search failed"),
+            "customer_name": customer_name,
+        }
 
     uuids = tag_out.get("vcon_uuids") or []
     vcons = tag_out.get("vcons") or []
     if not uuids and not vcons:
-        return {"success": False, "error": f"No vCons found for customer: {customer_name}", "customer_name": customer_name}
+        return {
+            "success": False,
+            "error": f"No vCons found for customer: {customer_name}",
+            "customer_name": customer_name,
+        }
 
     # If we only got UUIDs, fetch full vCons
     if not vcons and uuids:
@@ -243,6 +269,7 @@ async def generate_followup(customer_name: str) -> dict:
                     vcons.append(g["vcon"])
 
     from analysis import _vcon_to_text
+
     context_parts = [_vcon_to_text(v) for v in vcons]
     vcons_context = "\n---\n".join(context_parts)
 
@@ -263,24 +290,30 @@ def _demo_search_results(intent_query: str) -> list[dict]:
     """Return synthetic fixtures for the demo. Never live or real lead data."""
     query_lower = intent_query.lower()
     if any(word in query_lower for word in ["payment", "600", "explorer", "jane", "shock"]):
-        return [{
-            "customer_name": "Jane Smith",
-            "vcon_uuid": "demo-uuid-jane-smith",
-            "funnel_stage": "hot_lead",
-            "tags": ["payment_sensitive", "price_shock"],
-            "summary": (
-                "Synthetic demo lead: Explorer shopper with payment concerns. "
-                "Needs manager follow-up."
-            ),
-        }]
+        return [
+            {
+                "customer_name": "Jane Smith",
+                "vcon_uuid": "demo-uuid-jane-smith",
+                "funnel_stage": "new_lead",
+                "urgency": "hot_lead",
+                "tags": ["payment_sensitive", "price_shock"],
+                "summary": (
+                    "Synthetic demo lead: Explorer shopper with payment concerns. "
+                    "Needs manager follow-up."
+                ),
+            }
+        ]
     if any(word in query_lower for word in ["juan", "soto", "f-150", "1000"]):
-        return [{
-            "customer_name": "Juan Soto",
-            "vcon_uuid": "demo-uuid-juan-soto",
-            "funnel_stage": "hot_lead",
-            "tags": ["payment_sensitive"],
-            "summary": "Synthetic demo lead: F-150 shopper with a strict monthly budget.",
-        }]
+        return [
+            {
+                "customer_name": "Juan Soto",
+                "vcon_uuid": "demo-uuid-juan-soto",
+                "funnel_stage": "new_lead",
+                "urgency": "hot_lead",
+                "tags": ["payment_sensitive"],
+                "summary": "Synthetic demo lead: F-150 shopper with a strict monthly budget.",
+            }
+        ]
     return []
 
 

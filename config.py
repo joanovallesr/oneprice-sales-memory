@@ -2,6 +2,7 @@
 Load settings from environment. Used by vcon_client (VCON MCP connection)
 and analysis (OpenAI). Supports STDIO (Docker/local) for VCON MCP.
 """
+
 # pyright: reportMissingImports=false
 import os
 from pathlib import Path
@@ -17,11 +18,13 @@ VCON_MCP_URL = os.getenv("VCON_MCP_URL")  # If set, use HTTP transport
 VCON_MCP_COMMAND = os.getenv("VCON_MCP_COMMAND", "docker")
 VCON_MCP_STDIO_ARGS = os.getenv("VCON_MCP_STDIO_ARGS", "run,--rm,-i,vcon/vcon-mcp")
 
+
 def get_vcon_stdio_args() -> List[str]:
     """Parse VCON_MCP_STDIO_ARGS (comma-separated) into a list for StdioTransport."""
     if not VCON_MCP_STDIO_ARGS:
         return []
     return [a.strip() for a in VCON_MCP_STDIO_ARGS.split(",") if a.strip()]
+
 
 # OpenAI
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")

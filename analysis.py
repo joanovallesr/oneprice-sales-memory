@@ -2,6 +2,7 @@
 OpenAI integration: classify a vCon into funnel/urgency/tags and generate
 OnePrice-style follow-up scripts. Uses models.AnalysisResult.
 """
+
 # pyright: reportMissingImports=false
 import json
 from pathlib import Path
@@ -34,7 +35,8 @@ def _vcon_to_text(vcon: Dict[str, Any]) -> str:
     return "\n\n".join(parts) or "(no content)"
 
 
-CLASSIFY_SYSTEM = """You classify car-sales conversation summaries for OnePrice (no-haggle, one-price dealer).
+CLASSIFY_SYSTEM = """You classify car-sales conversation summaries for OnePrice.
+OnePrice is a no-haggle, one-price dealer.
 Output valid JSON only, with these exact keys:
 - funnel_stage: one of new_lead, appointment_set, in_store, pending_finance, sold, lost
 - urgency: one of hot_lead, warm_lead, cold_lead
@@ -109,11 +111,18 @@ async def generate_followup_script(customer_name: str, vcons_context: str) -> tu
         messages=[
             {
                 "role": "system",
-                "content": f"You write follow-up messages for OnePrice sales. Tone: {tone}. Keep it short (2–4 sentences). Output JSON only with keys: followup_script (string), suggested_channel (phone or email).",
+                "content": (
+                    "You write follow-up messages for OnePrice sales. "
+                    f"Tone: {tone}. Keep it short (2–4 sentences). "
+                    "Output JSON only with keys: followup_script (string), "
+                    "suggested_channel (phone or email)."
+                ),
             },
             {
                 "role": "user",
-                "content": f"Customer: {customer_name}\n\nContext:\n{vcons_context}\n\nWrite a follow-up.",
+                "content": (
+                    f"Customer: {customer_name}\n\nContext:\n{vcons_context}\n\nWrite a follow-up."
+                ),
             },
         ],
         response_format={"type": "json_object"},

@@ -41,6 +41,8 @@ def test_demo_results_are_labeled_synthetic() -> None:
 
     assert len(results) == 1
     assert results[0]["vcon_uuid"].startswith("demo-uuid-")
+    assert results[0]["funnel_stage"] == "new_lead"
+    assert results[0]["urgency"] == "hot_lead"
     assert "Synthetic" in results[0]["summary"]
 
 
