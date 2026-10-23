@@ -261,42 +261,87 @@ async def generate_followup(customer_name: str) -> dict:
     }
 
 
-@mcp.tool()
-async def search_by_intent(intent_query: str, days: int = 7) -> dict:
-    """Semantic/hybrid search (e.g. 'customers worried about monthly payment under 600')."""
-    
-    # HACKATHON DUCT TAPE: The VCON server's hybrid search is currently throwing a 
-    # database ambiguity error on the backend. For the sake of the video demo, 
-    # we are bypassing the broken VCON endpoint and passing the context directly.
-    
+def _demo_search_results(intent_query: str) -> list[dict]:
+    """Return synthetic fixtures for the demo. Never live or real lead data."""
     query_lower = intent_query.lower()
-    
-    # If Claude searches for the Jane Smith context
     if any(word in query_lower for word in ["payment", "600", "explorer", "jane", "shock"]):
-        results = [{
+        return [{
             "customer_name": "Jane Smith",
             "vcon_uuid": "demo-uuid-jane-smith",
             "funnel_stage": "hot_lead",
             "tags": ["payment_sensitive", "price_shock"],
-            "summary": "Customer looking for Explorer under $600/mo. Needs manager follow-up regarding price shock."
+            "summary": (
+                "Synthetic demo lead: Explorer shopper with payment concerns. "
+                "Needs manager follow-up."
+            ),
         }]
-    # If Claude searches for the Juan Soto context
-    elif any(word in query_lower for word in ["juan", "soto", "f-150", "1000"]):
-        results = [{
+    if any(word in query_lower for word in ["juan", "soto", "f-150", "1000"]):
+        return [{
             "customer_name": "Juan Soto",
             "vcon_uuid": "demo-uuid-juan-soto",
             "funnel_stage": "hot_lead",
             "tags": ["payment_sensitive"],
-            "summary": "Strict $1,000/mo budget on a Ford F-150."
+            "summary": "Synthetic demo lead: F-150 shopper with a strict monthly budget.",
         }]
-    else:
-        results = []
+    return []
 
+
+def _demo_search_response(intent_query: str, reason: str) -> dict:
+    """Return an explicitly labeled fallback instead of pretending search succeeded."""
     return {
-        "success": True, 
-        "results": results, 
+        "success": True,
+        "mode": "demo_fallback",
+        "demo": True,
+        "live_search_succeeded": False,
+        "results": _demo_search_results(intent_query),
         "query": intent_query,
-        "note": "Hybrid search successful."
+        "note": (
+            f"Live VCON hybrid search failed ({reason}). Returning synthetic demo "
+            "fixtures, not real leads."
+        ),
+    }
+
+
+@mcp.tool()
+async def search_by_intent(intent_query: str, days: int = 7) -> dict:
+    """
+    Hybrid semantic search over recent leads (e.g. "payment under $600").
+
+    Calls VCON's search_vcons_hybrid. If the upstream service fails, returns a
+    clearly labeled synthetic demo fallback rather than claiming live results.
+    """
+    if days < 1:
+        return {"success": False, "error": "days must be a positive integer", "results": []}
+
+    end = datetime.now(timezone.utc)
+    start = end - timedelta(days=days)
+    start_date = start.strftime("%Y-%m-%dT%H:%M:%SZ")
+    end_date = end.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    try:
+        async with get_vcon_client() as client:
+            out = await search_vcons_hybrid(
+                client,
+                intent_query,
+                limit=20,
+                start_date=start_date,
+                end_date=end_date,
+            )
+    except Exception:
+        # A broken VCON server must not break the demo; the fallback is labeled.
+        return _demo_search_response(intent_query, "connection error")
+
+    if out.get("success") is False or out.get("error"):
+        return _demo_search_response(intent_query, "upstream error")
+
+    results = out.get("results") or out.get("vcons") or []
+    return {
+        "success": True,
+        "mode": "live",
+        "demo": False,
+        "live_search_succeeded": True,
+        "results": results,
+        "query": intent_query,
     }
 
 

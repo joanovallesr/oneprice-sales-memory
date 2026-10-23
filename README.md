@@ -31,7 +31,7 @@ OnePrice salespeople get **40+ leads/day** across:
 | `add_followup_vcon` | Record follow-up call/note |
 | `get_hot_leads` | Hot leads needing follow-up |
 | `get_missed_leads` | New leads with no follow-up |
-| `search_by_intent` | Semantic search ("payment under $600") |
+| `search_by_intent` | Hybrid search; labeled synthetic fallback if VCON is unavailable |
 | `generate_followup` | OnePrice-style sales scripts |
 
 ## **Quick Start**
@@ -66,8 +66,15 @@ Claude/Cursor ── MCP ── oneprice_sales_server.py ── vcon_client.py �
 ```
 
 - **Clean separation**: MCP server → VCON wrapper → OpenAI analysis
-- **Production-ready**: Pydantic types, async, error handling
+- **Typed and async**: Pydantic models and async MCP calls
 - **vCon-native**: `create_vcon_from_template`, `add_analysis`, `add_tag`, hybrid search
+
+## **Data Handling**
+
+`analyze_and_tag_vcon` and `generate_followup` send customer notes and conversation
+text to OpenAI. Do not use real customer data without consent and a retention policy.
+The records in `sample_data/` and the `search_by_intent` demo fallback are synthetic
+and contain no real customer information.
 
 ## **vCon Schema (Car Sales)**
 
@@ -81,7 +88,7 @@ Analysis: {"vehicle_interest": "Explorer", "timeline": "2_weeks"}
 
 - **Sponsor APIs**: Full VCON MCP (CRUD, search, tags, analysis)
 - **Real use case**: Real dealership lead chaos → AI-powered pipeline
-- **Production code**: Types, tests, docs, error handling
+- **Working prototype**: Typed models, docs, and explicit error responses
 - **Multi-client**: Works with Claude, Cursor, ChatGPT MCP
 - **Scalable**: Add Supabase → persistent vCons across dealerships
 
@@ -93,7 +100,7 @@ Analysis: {"vehicle_interest": "Explorer", "timeline": "2_weeks"}
 ├── analysis.py              # OpenAI classification/scripts
 ├── models.py                # Pydantic types
 ├── config.py                # Env loading
-├── sample_data/             # Real leads
+├── sample_data/             # Synthetic sample data
 ├── requirements.txt         # pip install
 └── README.md                # This file
 ```
