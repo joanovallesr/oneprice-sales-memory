@@ -1,4 +1,4 @@
-# Mullinax follow-up tone
+# OnePrice follow-up tone
 
 - **One price, no haggle**: We don't negotiate; our price is our price.
 - **Transparent**: No hidden fees or pressure tactics.

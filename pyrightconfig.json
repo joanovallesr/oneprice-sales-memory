@@ -1,5 +1,5 @@
 {
-  "venvPath": "/Users/joanovalles/oneprice_sales_memory",
+  "venvPath": ".",
   "venv": ".venv",
   "pythonVersion": "3.13"
 }

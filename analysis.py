@@ -1,10 +1,9 @@
 """
 OpenAI integration: classify a vCon into funnel/urgency/tags and generate
-Mullinax-style follow-up scripts. Uses models.AnalysisResult.
+OnePrice-style follow-up scripts. Uses models.AnalysisResult.
 """
 # pyright: reportMissingImports=false
 import json
-from builtins import ValueError, bool, enumerate, str, tuple
 from pathlib import Path
 from typing import Any, Dict
 
@@ -35,7 +34,7 @@ def _vcon_to_text(vcon: Dict[str, Any]) -> str:
     return "\n\n".join(parts) or "(no content)"
 
 
-CLASSIFY_SYSTEM = """You classify car-sales conversation summaries for Mullinax Ford (no-haggle, one-price dealer).
+CLASSIFY_SYSTEM = """You classify car-sales conversation summaries for OnePrice (no-haggle, one-price dealer).
 Output valid JSON only, with these exact keys:
 - funnel_stage: one of new_lead, appointment_set, in_store, pending_finance, sold, lost
 - urgency: one of hot_lead, warm_lead, cold_lead
@@ -92,25 +91,25 @@ async def classify_lead(vcon_dict: Dict[str, Any]) -> AnalysisResult:
         )
 
 
-def _load_mullinax_tone() -> str:
-    path = Path(__file__).resolve().parent / "sample_data" / "mullinax_tone.md"
+def _load_oneprice_tone() -> str:
+    path = Path(__file__).resolve().parent / "sample_data" / "oneprice_tone.md"
     if path.exists():
         return path.read_text()
-    return "Mullinax Ford: one price, no haggle, transparent, friendly, no pressure."
+    return "OnePrice: one price, no haggle, transparent, friendly, no pressure."
 
 
 async def generate_followup_script(customer_name: str, vcons_context: str) -> tuple[str, str]:
     """
-    Generate a short Mullinax-style follow-up (phone or email). Returns (script, channel).
+    Generate a short OnePrice-style follow-up (phone or email). Returns (script, channel).
     """
-    tone = _load_mullinax_tone()
+    tone = _load_oneprice_tone()
     client = _openai_client()
     resp = await client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {
                 "role": "system",
-                "content": f"You write follow-up messages for Mullinax Ford sales. Tone: {tone}. Keep it short (2–4 sentences). Output JSON only with keys: followup_script (string), suggested_channel (phone or email).",
+                "content": f"You write follow-up messages for OnePrice sales. Tone: {tone}. Keep it short (2–4 sentences). Output JSON only with keys: followup_script (string), suggested_channel (phone or email).",
             },
             {
                 "role": "user",

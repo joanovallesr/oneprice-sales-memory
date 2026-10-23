@@ -3,13 +3,11 @@ OnePrice Sales Memory – FastMCP server exposing 6 tools that sit on top of VCO
 Entrypoint: run this module to start the MCP server (STDIO).
 """
 # pyright: reportMissingImports=false
-from builtins import str, bool, dict, list, isinstance, int, Exception
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastmcp.server.server import FastMCP
 
-import config
 from analysis import classify_lead, generate_followup_script
 from vcon_client import (
     add_analysis as vcon_add_analysis,
@@ -112,7 +110,7 @@ def _tags_from_vcon(vcon: dict) -> dict:
 
 
 def _lead_summaries_from_vcons(vcons_list: list) -> list[dict]:
-    """Build LeadSummary-like dicts from VCON search results (vcons array or results with vcon)."""
+    """Build lead summary dicts from VCON search results (vcons array or results with vcon)."""
     out = []
     for item in vcons_list:
         vcon = item.get("vcon") if isinstance(item, dict) else item

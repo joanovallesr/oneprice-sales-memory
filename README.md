@@ -4,7 +4,7 @@
 
 Turns scattered car leads (web forms, calls, showroom) into **prioritized action items** using **VCON MCP** + AI analysis.
 
-[![FastMCP](https://img.shields.io/badge/FastMCP-3.1.0-brightgreen)](https://gofastmcp.com)
+[![FastMCP](https://img.shields.io/badge/FastMCP-4.1.3-brightgreen)](https://gofastmcp.com)
 [![VCON MCP](https://img.shields.io/badge/VCON%20MCP-2026.02.27-blue)](https://mcp.conserver.io)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue)](https://python.org)
 
@@ -38,8 +38,8 @@ OnePrice salespeople get **40+ leads/day** across:
 
 ```bash
 # 1. Clone
-git clone https://github.com/joanovalles/oneprice_sales_memory
-cd oneprice_sales_memory
+git clone https://github.com/joanovallesr/oneprice-sales-memory.git
+cd oneprice-sales-memory
 
 # 2. Install
 pip install -r requirements.txt
@@ -51,11 +51,21 @@ cp .env.example .env
 # 4. VCON MCP (Docker)
 docker run -d -p 3000:3000 public.ecr.aws/r4g1k2s3/vcon-dev/vcon-mcp:main
 
-# 5. Run MCP server
-source .env && python oneprice_sales_server.py
+# 5. Run MCP server (config.py loads .env automatically)
+python oneprice_sales_server.py
 ```
 
 **Connect to Claude Desktop/Cursor/ChatGPT** (see `~/.cursor/mcp.json` example).
+
+## **Tests**
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+The suite covers model validation and pure helper functions. It does not require
+Docker, VCON, or an OpenAI key.
 
 ## **Architecture**
 

@@ -4,7 +4,6 @@ and analysis (OpenAI). Supports STDIO (Docker/local) for VCON MCP.
 """
 # pyright: reportMissingImports=false
 import os
-from builtins import str
 from pathlib import Path
 from typing import List
 

@@ -161,28 +161,6 @@ async def add_followup_vcon(client: Client, customer_name: str, notes: str) -> d
     return {"success": True, "vcon_uuid": uuid, "customer_name": customer_name}
 
 
-async def add_dialog(
-    client: Client,
-    vcon_uuid: str,
-    body: str,
-    parties: Optional[list[int]] = None,
-) -> dict:
-    """Add a text dialog to an existing vCon."""
-    return await _call(
-        client,
-        "add_dialog",
-        {
-            "vcon_uuid": vcon_uuid,
-            "dialog": {
-                "type": "text",
-                "body": body[:65535],
-                "encoding": "none",
-                "parties": parties or [0, 1],
-            },
-        },
-    )
-
-
 async def add_analysis(
     client: Client,
     vcon_uuid: str,
