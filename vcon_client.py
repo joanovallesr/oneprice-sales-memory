@@ -4,12 +4,14 @@ All functions are async and expect to be used with a client from get_vcon_client
 """
 
 # pyright: reportMissingImports=false
+import json
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Any, Optional
 
 from fastmcp import Client
 from fastmcp.client.transports.stdio import StdioTransport
+from fastmcp.exceptions import ToolError
 
 import config
 
@@ -43,10 +45,6 @@ async def get_vcon_client():
 
 async def _call(client: Client, tool: str, arguments: dict) -> dict:
     """Call VCON MCP tool; return result or raise with error message."""
-    import json  # Added json import
-
-    from fastmcp.exceptions import ToolError  # pyright: ignore[reportMissingImports]
-
     try:
         result = await client.call_tool(tool, arguments, raise_on_error=True)
 

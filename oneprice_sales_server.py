@@ -9,7 +9,7 @@ from typing import Optional
 
 from fastmcp.server.server import FastMCP
 
-from analysis import classify_lead, generate_followup_script
+from analysis import _vcon_to_text, classify_lead, generate_followup_script
 from vcon_client import (
     add_analysis as vcon_add_analysis,
     add_followup_vcon as vcon_add_followup,
@@ -268,8 +268,6 @@ async def generate_followup(customer_name: str) -> dict:
                 if g.get("vcon"):
                     vcons.append(g["vcon"])
 
-    from analysis import _vcon_to_text
-
     context_parts = [_vcon_to_text(v) for v in vcons]
     vcons_context = "\n---\n".join(context_parts)
 
@@ -320,16 +318,14 @@ def _demo_search_results(intent_query: str) -> list[dict]:
 def _demo_search_response(intent_query: str, reason: str) -> dict:
     """Return an explicitly labeled fallback instead of pretending search succeeded."""
     return {
-        "success": True,
+        "success": False,
         "mode": "demo_fallback",
         "demo": True,
         "live_search_succeeded": False,
         "results": _demo_search_results(intent_query),
         "query": intent_query,
-        "note": (
-            f"Live VCON hybrid search failed ({reason}). Returning synthetic demo "
-            "fixtures, not real leads."
-        ),
+        "error": f"Live VCON hybrid search failed ({reason}).",
+        "note": "Returning synthetic demo fixtures, not real leads.",
     }
 
 

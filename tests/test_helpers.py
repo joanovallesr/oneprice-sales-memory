@@ -49,6 +49,7 @@ def test_demo_results_are_labeled_synthetic() -> None:
 def test_demo_response_never_claims_live_results() -> None:
     result = _demo_search_response("payment", "upstream error")
 
+    assert result["success"] is False
     assert result["demo"] is True
     assert result["live_search_succeeded"] is False
     assert "not real leads" in result["note"].lower()

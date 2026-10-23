@@ -31,7 +31,7 @@ OnePrice salespeople get **40+ leads/day** across:
 | `add_followup_vcon` | Record follow-up call/note |
 | `get_hot_leads` | Hot leads needing follow-up |
 | `get_missed_leads` | New leads with no follow-up |
-| `search_by_intent` | Hybrid search; labeled synthetic fallback if VCON is unavailable |
+| `search_by_intent` | Hybrid search; labeled synthetic fallback if VCON search fails |
 | `generate_followup` | OnePrice-style sales scripts |
 
 ## **Quick Start**
@@ -110,8 +110,11 @@ Analysis: {"vehicle_interest": "Explorer", "timeline": "2_weeks"}
 ├── analysis.py              # OpenAI classification/scripts
 ├── models.py                # Pydantic types
 ├── config.py                # Env loading
+├── tests/                   # pytest suite
 ├── sample_data/             # Synthetic sample data
-├── requirements.txt         # pip install
+├── requirements.txt         # Runtime dependencies
+├── requirements-dev.txt     # Test/lint dependencies
+├── pyproject.toml           # Pytest/Ruff config
 └── README.md                # This file
 ```
 
